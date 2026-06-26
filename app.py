@@ -15,12 +15,7 @@ st.set_page_config(
 
 initialize_session_state()
 
-theme_mode = render_theme_switcher(
-    disabled=st.session_state.get(
-        "is_optimizing",
-        False,
-    )
-)
+theme_mode = render_theme_switcher()
 apply_theme(theme_mode)
 
 
