@@ -12,6 +12,21 @@ from core.models import (
 )
 
 
+def render_slider_limits(
+    minimum: float,
+    maximum: float,
+) -> None:
+    st.markdown(
+        f"""
+        <div class="uw-slider-limits">
+            <span>{minimum:.2f}</span>
+            <span>{maximum:.2f}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_vehicle_inputs(
     number_of_vehicles: int,
 ) -> list[VehicleSpec]:
@@ -100,6 +115,7 @@ def render_objective_config() -> ObjectiveConfig:
                 "quilómetros percorridos."
             ),
         )
+        render_slider_limits(0.0, 1.0)
 
     with col2:
         time_weight = st.slider(
@@ -113,6 +129,7 @@ def render_objective_config() -> ObjectiveConfig:
                 "a duração da operação."
             ),
         )
+        render_slider_limits(0.0, 1.0)
 
     with col3:
         fuel_weight = st.slider(
@@ -126,6 +143,7 @@ def render_objective_config() -> ObjectiveConfig:
                 "rotas energeticamente eficientes, incluindo declives."
             ),
         )
+        render_slider_limits(0.0, 1.0)
 
     total = distance_weight + time_weight + fuel_weight
 

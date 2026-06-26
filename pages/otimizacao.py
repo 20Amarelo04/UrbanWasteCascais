@@ -28,7 +28,8 @@ with left:
     run_clicked = st.button(
         "Executar otimização",
         type="primary",
-        use_container_width=True,
+        width="stretch",
+        disabled=st.session_state.is_optimizing,
     )
 
 with right:
@@ -37,7 +38,17 @@ with right:
     else:
         st.success("Resultado disponível.")
 
-if run_clicked:
+if run_clicked and not st.session_state.is_optimizing:
+    st.session_state.pending_optimization_request = request
+    st.session_state.is_optimizing = True
+    st.rerun()
+
+if (
+    st.session_state.is_optimizing
+    and st.session_state.pending_optimization_request is not None
+):
+    request_to_run = st.session_state.pending_optimization_request
+
     try:
         with st.status(
             "A preparar dados e calcular rotas...",
@@ -48,11 +59,11 @@ if run_clicked:
 
             st.write(
                 "A executar o algoritmo "
-                f"{request.algorithm.upper()}."
+                f"{request_to_run.algorithm.upper()}."
             )
             result = run_optimization(
                 data=data,
-                request=request,
+                request=request_to_run,
             )
 
             st.session_state.optimization_result = result
@@ -72,6 +83,10 @@ if run_clicked:
     except Exception as error:
         st.session_state.optimization_error = str(error)
         st.error(f"Erro na otimização: {error}")
+
+    finally:
+        st.session_state.is_optimizing = False
+        st.session_state.pending_optimization_request = None
 
 if st.session_state.optimization_result is not None:
     summary = st.session_state.optimization_result.summary

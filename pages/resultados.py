@@ -68,7 +68,7 @@ with tabs[1]:
 with tabs[2]:
     st.dataframe(
         result.vehicles_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -112,7 +112,7 @@ with tabs[3]:
 
     st.dataframe(
         segments_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -141,7 +141,7 @@ with tabs[4]:
 
     st.dataframe(
         sequence_df,
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -151,6 +151,6 @@ with tabs[5]:
     else:
         st.dataframe(
             result.uncollected_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )

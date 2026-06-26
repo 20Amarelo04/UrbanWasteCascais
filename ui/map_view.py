@@ -361,7 +361,14 @@ def render_solution_map(
         else []
     )
 
-    control_1, control_2, control_3 = st.columns([2, 1, 1])
+    st.markdown("**Opções do mapa**")
+    st.caption(
+        "Rota pelas estradas usa OSRM para desenhar o percurso sobre "
+        "a rede viária. Não recolhidos mostra a cinza os contentores "
+        "que ficaram fora da solução."
+    )
+
+    control_1, control_2 = st.columns([2.2, 1])
 
     with control_1:
         selected_vehicle_ids = st.multiselect(
@@ -369,36 +376,17 @@ def render_solution_map(
             options=available_vehicle_ids,
             default=available_vehicle_ids,
             format_func=lambda vehicle_id: f"Veículo {vehicle_id}",
-            help=(
-                "Permite isolar uma ou várias rotas para facilitar "
-                "a leitura do mapa."
-            ),
         )
 
     with control_2:
         draw_roads = st.toggle(
             "Rota pelas estradas",
             value=True,
-            help=(
-                "Quando ativo, usa OSRM para desenhar a rota sobre "
-                "as estradas. Quando inativo, liga os pontos diretamente."
-            ),
         )
-
-    with control_3:
         show_uncollected = st.toggle(
             "Não recolhidos",
             value=True,
-            help=(
-                "Mostra no mapa os contentores que ficaram fora da solução, "
-                "assinalados a cinza."
-            ),
         )
-
-    st.caption(
-        "As linhas pelas estradas usam OSRM. Se o serviço externo "
-        "falhar, a app mantém a rota em linha direta como fallback."
-    )
 
     st_folium(
         build_solution_map(

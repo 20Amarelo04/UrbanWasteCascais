@@ -17,18 +17,44 @@ COLOR_SEQUENCE = [
 
 def polish_chart(figure):
     is_dark = st.session_state.get("theme_mode") == "Escuro"
+    text_color = "#f4fbf7" if is_dark else "#17231f"
+    muted_color = "#b8c9c0" if is_dark else "#52665d"
+    grid_color = "#32443c" if is_dark else "#d4e2db"
 
     figure.update_layout(
         template="plotly_dark" if is_dark else "plotly_white",
         margin=dict(l=10, r=10, t=55, b=10),
-        title_font=dict(size=18),
+        title_font=dict(
+            size=18,
+            color=text_color,
+        ),
         font=dict(
             family="Arial",
-            color="#f4fbf7" if is_dark else "#17231f",
+            color=text_color,
         ),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(255,255,255,0)",
         hovermode="x unified",
+        legend=dict(
+            font=dict(color=text_color),
+            title=dict(font=dict(color=text_color)),
+        ),
+    )
+
+    figure.update_xaxes(
+        title_font=dict(color=text_color),
+        tickfont=dict(color=muted_color),
+        linecolor=grid_color,
+        gridcolor=grid_color,
+        zerolinecolor=grid_color,
+    )
+
+    figure.update_yaxes(
+        title_font=dict(color=text_color),
+        tickfont=dict(color=muted_color),
+        linecolor=grid_color,
+        gridcolor=grid_color,
+        zerolinecolor=grid_color,
     )
 
     return figure
@@ -77,7 +103,7 @@ def render_vehicle_charts(
 
         st.plotly_chart(
             polish_chart(figure),
-            use_container_width=True,
+            width="stretch",
         )
 
     with right:
@@ -96,7 +122,7 @@ def render_vehicle_charts(
 
         st.plotly_chart(
             polish_chart(figure),
-            use_container_width=True,
+            width="stretch",
         )
 
     left, right = st.columns(2)
@@ -117,7 +143,7 @@ def render_vehicle_charts(
 
         st.plotly_chart(
             polish_chart(figure),
-            use_container_width=True,
+            width="stretch",
         )
 
     with right:
@@ -139,7 +165,7 @@ def render_vehicle_charts(
 
         st.plotly_chart(
             polish_chart(figure),
-            use_container_width=True,
+            width="stretch",
         )
 
 
@@ -168,7 +194,7 @@ def render_segment_chart(
 
     st.plotly_chart(
         polish_chart(figure),
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -196,7 +222,7 @@ def render_grade_chart(
 
     st.plotly_chart(
         polish_chart(figure),
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -235,7 +261,7 @@ def render_route_timeline(
 
     st.plotly_chart(
         polish_chart(figure),
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -274,5 +300,5 @@ def render_history_chart(
 
     st.plotly_chart(
         polish_chart(figure),
-        use_container_width=True,
+        width="stretch",
     )

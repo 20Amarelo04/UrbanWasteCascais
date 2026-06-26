@@ -69,7 +69,7 @@ try:
 
         st.dataframe(
             filtered_points,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
 
@@ -87,7 +87,7 @@ try:
         st.write("Amostra da matriz de distâncias")
         st.dataframe(
             data.distance_matrix_m[:20, :20],
-            use_container_width=True,
+            width="stretch",
         )
 
 except Exception as error:

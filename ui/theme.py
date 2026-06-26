@@ -9,18 +9,26 @@ def get_theme_mode() -> str:
     return st.session_state.get("theme_mode", "Claro")
 
 
-def render_theme_switcher() -> str:
+def render_theme_switcher(
+    disabled: bool = False,
+) -> str:
     theme_mode = st.sidebar.radio(
         "Tema",
         options=["Claro", "Escuro"],
         index=0,
         horizontal=True,
         key="theme_mode",
+        disabled=disabled,
         help=(
             "Alterna entre um tema claro para ambientes iluminados "
             "e um tema escuro para reduzir brilho no ecrã."
         ),
     )
+
+    if disabled:
+        st.sidebar.caption(
+            "Tema bloqueado enquanto a otimização está a correr."
+        )
 
     return theme_mode
 
@@ -423,6 +431,20 @@ def apply_theme(theme_mode: str = "Claro") -> None:
 
         .uw-muted {
             color: var(--uw-muted);
+        }
+
+        .uw-slider-limits {
+            display: flex;
+            justify-content: space-between;
+            color: var(--uw-muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-top: -0.35rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .uw-slider-limits span {
+            color: var(--uw-muted) !important;
         }
         </style>
         """

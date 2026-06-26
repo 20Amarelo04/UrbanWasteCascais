@@ -8,6 +8,8 @@ def initialize_session_state() -> None:
         "optimization_result": None,
         "optimization_error": None,
         "loaded_data": None,
+        "is_optimizing": False,
+        "pending_optimization_request": None,
     }
 
     for key, default_value in defaults.items():
