@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ui.state import initialize_session_state
 from ui.theme import apply_theme, render_theme_switcher
 
 
@@ -11,6 +12,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+initialize_session_state()
 
 theme_mode = render_theme_switcher(
     disabled=st.session_state.get(
