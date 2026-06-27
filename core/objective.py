@@ -323,6 +323,6 @@ def build_solution_key(
         uncollected_containers,
         objective_score,
         fuel_l,
-        time_s,
         distance_m,
+        time_s,
     )

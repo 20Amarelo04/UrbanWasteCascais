@@ -51,9 +51,9 @@ class ORToolsConfig:
 
 @dataclass(frozen=True)
 class ObjectiveConfig:
-    distance_weight: float = 0.30
-    time_weight: float = 0.30
-    fuel_weight: float = 0.40
+    distance_weight: float = 0.50
+    time_weight: float = 0.0
+    fuel_weight: float = 0.50
 
     def validate(self) -> None:
         weights = (

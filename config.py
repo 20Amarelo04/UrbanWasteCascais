@@ -39,9 +39,9 @@ class OperationConfig:
 
 @dataclass(frozen=True)
 class ObjectiveWeights:
-    distance: float = 0.30
-    time: float = 0.30
-    fuel: float = 0.40
+    distance: float = 0.50
+    time: float = 0.0
+    fuel: float = 0.50
 
     def validate(self) -> None:
         weights = (

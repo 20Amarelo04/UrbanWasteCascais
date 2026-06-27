@@ -15,7 +15,7 @@ page_header(
     title="Otimização de rotas",
     subtitle=(
         "Configura a frota, escolhe o algoritmo e calcula rotas "
-        "equilibrando distância, tempo e combustível."
+        "minimizando lixo não recolhido, combustível e distância."
     ),
     label="Motor de decisão",
 )

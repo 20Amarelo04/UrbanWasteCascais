@@ -101,11 +101,25 @@ def render_vehicle_inputs(
 def render_objective_config() -> ObjectiveConfig:
     st.subheader("Função objetivo")
 
-    col1, col2, col3 = st.columns(3)
+    st.info(
+        "Objetivo: minimizar lixo não recolhido, combustível e distância. "
+        "O tempo fica como restrição do turno, não como critério de custo."
+    )
+
+    st.markdown(
+        """
+        **Prioridade fixa**
+
+        1. Minimizar contentores/lixo não recolhidos.
+        2. Entre soluções equivalentes, minimizar combustível e distância.
+        """
+    )
+
+    col1, col2 = st.columns(2)
 
     with col1:
         distance_weight = st.slider(
-            "Distância",
+            "Peso da distância",
             min_value=0.0,
             max_value=1.0,
             value=float(OBJECTIVE_WEIGHTS.distance),
@@ -118,52 +132,39 @@ def render_objective_config() -> ObjectiveConfig:
         render_slider_limits(0.0, 1.0)
 
     with col2:
-        time_weight = st.slider(
-            "Tempo",
-            min_value=0.0,
-            max_value=1.0,
-            value=float(OBJECTIVE_WEIGHTS.time),
-            step=0.05,
-            help=(
-                "Quanto maior este peso, mais o algoritmo tenta reduzir "
-                "a duração da operação."
-            ),
-        )
-        render_slider_limits(0.0, 1.0)
-
-    with col3:
         fuel_weight = st.slider(
-            "Combustível",
+            "Peso do combustível",
             min_value=0.0,
             max_value=1.0,
             value=float(OBJECTIVE_WEIGHTS.fuel),
             step=0.05,
             help=(
-                "Quanto maior este peso, mais o algoritmo privilegia "
-                "rotas energeticamente eficientes, incluindo declives."
+                "Quanto maior este peso, mais o algoritmo tenta reduzir "
+                "litros consumidos, considerando carga e declive."
             ),
         )
         render_slider_limits(0.0, 1.0)
 
-    total = distance_weight + time_weight + fuel_weight
+    total = distance_weight + fuel_weight
 
     if total <= 0:
         st.warning(
-            "A soma dos pesos tem de ser superior a zero."
+            "A soma dos pesos de distância e combustível tem de ser "
+            "superior a zero."
         )
         total = 1.0
 
     objective = ObjectiveConfig(
         distance_weight=distance_weight / total,
-        time_weight=time_weight / total,
+        time_weight=0.0,
         fuel_weight=fuel_weight / total,
     )
 
     st.caption(
         "Pesos normalizados: "
         f"distância {objective.distance_weight:.0%}, "
-        f"tempo {objective.time_weight:.0%}, "
-        f"combustível {objective.fuel_weight:.0%}."
+        f"combustível {objective.fuel_weight:.0%}. "
+        "Tempo = 0% na função objetivo."
     )
 
     return objective

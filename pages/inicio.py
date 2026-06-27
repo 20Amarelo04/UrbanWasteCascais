@@ -10,7 +10,7 @@ page_header(
     title="UrbanWasteCascais",
     subtitle=(
         "Planeamento inteligente de rotas de recolha urbana, "
-        "com custos ponderados por distância, tempo e combustível."
+        "com otimização de lixo não recolhido, combustível e distância."
     ),
     label="Painel operacional",
 )
@@ -36,8 +36,8 @@ with left:
     info_card(
         title="Otimização",
         body=(
-            "Escolhe OR-Tools ou MMAS, define veículos, pesos "
-            "da função objetivo e restrições operacionais."
+            "Escolhe OR-Tools ou MMAS, define veículos, pesos de "
+            "combustível/distância e restrições operacionais."
         ),
         badge="Passo 1",
     )

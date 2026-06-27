@@ -102,23 +102,26 @@ elif section == "Função objetivo":
     st.subheader("Função objetivo")
 
     st.write(
-        "A função objetivo decide o que significa uma rota ser melhor. "
-        "Os três pesos são normalizados automaticamente."
+        "A função objetivo decide o que significa uma solução ser melhor. "
+        "Aqui o tempo não entra como custo: fica apenas como restrição "
+        "do turno."
     )
 
     st.markdown(
         """
-        | Peso | Se aumentares | Possível efeito |
+        | Critério | Como é tratado | Efeito |
         |---|---|---|
-        | Distância | O solver evita quilómetros | Pode aceitar rotas mais demoradas |
-        | Tempo | O solver reduz duração operacional | Pode aumentar distância ou combustível |
-        | Combustível | O solver evita consumo, massa e declives | Pode escolher caminhos menos óbvios |
+        | Lixo não recolhido | Prioridade fixa | A app tenta deixar o mínimo possível por recolher |
+        | Combustível | Peso ajustável | Reduz litros consumidos, considerando carga e declive |
+        | Distância | Peso ajustável | Reduz quilómetros percorridos |
+        | Tempo | Restrição | Limita a duração do turno, mas não é minimizado no score |
         """
     )
 
     st.success(
-        "Neste projeto, o combustível usa distância, tempo, massa do veículo, "
-        "carga transportada e declive entre pontos."
+        "Formulação prática: primeiro minimiza contentores/lixo não "
+        "recolhidos; depois minimiza uma combinação ponderada de "
+        "combustível e distância."
     )
 
 elif section == "Resultados":
@@ -139,8 +142,8 @@ elif section == "Resultados":
     )
 
     st.warning(
-        "Uma solução pode recolher tudo, mas ainda não ser a melhor se gastar "
-        "muito tempo, distância ou combustível."
+        "Uma solução pode recolher tudo, mas ainda não ser a melhor se "
+        "gastar mais combustível ou percorrer mais distância do que outra."
     )
 
 elif section == "Mapa":
