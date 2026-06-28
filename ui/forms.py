@@ -102,8 +102,7 @@ def render_objective_config() -> ObjectiveConfig:
     st.subheader("Função objetivo")
 
     st.info(
-        "Objetivo: minimizar lixo não recolhido, combustível e distância. "
-        "O tempo fica como restrição do turno, não como critério de custo."
+        "Objetivo: minimizar lixo não recolhido, combustível e distância."
     )
 
     st.markdown(
