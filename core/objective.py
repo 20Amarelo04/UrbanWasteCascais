@@ -297,6 +297,7 @@ def calculate_heuristic_value(
 def build_solution_key(
     total_containers: int,
     collected_containers: int,
+    uncollected_waste_kg: float,
     objective_score: float,
     fuel_l: float,
     time_s: float,
@@ -320,6 +321,7 @@ def build_solution_key(
     )
 
     return (
+        uncollected_waste_kg,
         uncollected_containers,
         objective_score,
         fuel_l,

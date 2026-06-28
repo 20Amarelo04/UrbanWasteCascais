@@ -14,6 +14,7 @@ from core.models import (
 from core.objective import build_objective_scales
 from core.route_evaluator import (
     evaluate_solution,
+    sum_container_waste_kg,
     identify_event_type,
 )
 
@@ -47,8 +48,11 @@ def build_optimization_result(
                 "vehicle_name": route.vehicle_name,
                 "contentores": len(route.collected_containers),
                 "lixo_recolhido_kg": (
-                    len(route.collected_containers)
-                    * request.container_load_kg
+                    sum_container_waste_kg(
+                        data=data,
+                        container_ids=route.collected_containers,
+                        fallback_kg=request.container_load_kg,
+                    )
                 ),
                 "distancia_km": route.total_distance_m / 1000,
                 "tempo_h": route.total_time_s / 3600,
@@ -118,6 +122,9 @@ def build_optimization_result(
             evaluation.duplicated_containers
         ),
         "lixo_recolhido_kg": evaluation.total_collected_waste_kg,
+        "lixo_nao_recolhido_kg": (
+            evaluation.total_uncollected_waste_kg
+        ),
         "distancia_total_km": evaluation.total_distance_m / 1000,
         "combustivel_total_l": evaluation.total_fuel_l,
         "maior_tempo_veiculo_h": (

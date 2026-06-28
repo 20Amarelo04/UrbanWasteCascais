@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import math
 
 from core.fuel_model import calculate_segment_metrics
 from core.models import (
@@ -16,6 +17,48 @@ from core.objective import (
     build_solution_key,
     calculate_objective,
 )
+
+
+def get_container_waste_kg(
+    data: DataBundle,
+    matrix_id: int,
+    fallback_kg: float,
+) -> float:
+    if "waste_kg" not in data.points.columns:
+        return float(fallback_kg)
+
+    matches = data.points.loc[
+        data.points["matrix_id"].astype(int) == int(matrix_id),
+        "waste_kg",
+    ]
+
+    if matches.empty:
+        return float(fallback_kg)
+
+    try:
+        waste_kg = float(matches.iloc[0])
+    except (TypeError, ValueError):
+        return float(fallback_kg)
+
+    if not math.isfinite(waste_kg) or waste_kg <= 0:
+        return float(fallback_kg)
+
+    return waste_kg
+
+
+def sum_container_waste_kg(
+    data: DataBundle,
+    container_ids: list[int],
+    fallback_kg: float,
+) -> float:
+    return sum(
+        get_container_waste_kg(
+            data=data,
+            matrix_id=container_id,
+            fallback_kg=fallback_kg,
+        )
+        for container_id in container_ids
+    )
 
 
 def validate_request(
@@ -220,13 +263,19 @@ def evaluate_route(
                 )
 
             else:
+                container_waste_kg = get_container_waste_kg(
+                    data=data,
+                    matrix_id=to_matrix_id,
+                    fallback_kg=request.container_load_kg,
+                )
+
                 service_time_s = float(
                     request.service_time_s
                 )
 
                 load_after_kg = (
                     load_before_kg
-                    + request.container_load_kg
+                    + container_waste_kg
                 )
 
                 collected_set.add(
@@ -474,8 +523,19 @@ def evaluate_solution(
     )
 
     total_collected_waste_kg = (
-        len(collected_containers)
-        * request.container_load_kg
+        sum_container_waste_kg(
+            data=data,
+            container_ids=collected_containers,
+            fallback_kg=request.container_load_kg,
+        )
+    )
+
+    total_uncollected_waste_kg = (
+        sum_container_waste_kg(
+            data=data,
+            container_ids=uncollected_containers,
+            fallback_kg=request.container_load_kg,
+        )
     )
 
     objective_breakdown = calculate_objective(
@@ -492,6 +552,9 @@ def evaluate_solution(
         ),
         collected_containers=len(
             collected_containers
+        ),
+        uncollected_waste_kg=(
+            total_uncollected_waste_kg
         ),
         objective_score=(
             objective_breakdown.score
@@ -532,6 +595,9 @@ def evaluate_solution(
         total_fuel_l=total_fuel_l,
         total_collected_waste_kg=(
             total_collected_waste_kg
+        ),
+        total_uncollected_waste_kg=(
+            total_uncollected_waste_kg
         ),
         objective_score=objective_breakdown.score,
         solution_key=solution_key,

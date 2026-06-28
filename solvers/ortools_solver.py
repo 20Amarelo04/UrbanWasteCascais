@@ -17,7 +17,10 @@ from core.objective import (
     build_objective_scales,
     calculate_objective,
 )
-from core.route_evaluator import evaluate_solution
+from core.route_evaluator import (
+    evaluate_solution,
+    get_container_waste_kg,
+)
 
 
 COST_SCALE = 1_000_000
@@ -30,6 +33,13 @@ class RoutingProblem:
     manager: object
     routing: object
     matrix_ids: list[int]
+    trips: list["RoutingTrip"]
+
+
+@dataclass(frozen=True)
+class RoutingTrip:
+    physical_vehicle_index: int
+    trip_index: int
 
 
 def load_ortools_modules() -> tuple[object, object]:
@@ -89,13 +99,76 @@ def build_solver_node_list(
     containers = [
         int(matrix_id)
         for matrix_id in data.container_matrix_ids
-        if int(matrix_id) != data.base_matrix_id
+        if int(matrix_id)
+        not in {
+            data.base_matrix_id,
+            data.landfill_matrix_id,
+        }
     ]
 
     return [
         int(data.base_matrix_id),
+        int(data.landfill_matrix_id),
         *containers,
     ]
+
+
+def build_routing_trips(
+    request: OptimizationRequest,
+) -> list[RoutingTrip]:
+    trip_count = max(1, int(request.max_unloads))
+
+    return [
+        RoutingTrip(
+            physical_vehicle_index=vehicle_index,
+            trip_index=trip_index,
+        )
+        for vehicle_index, _ in enumerate(request.vehicles)
+        for trip_index in range(trip_count)
+    ]
+
+
+def container_waste_to_units(
+    data: DataBundle,
+    matrix_id: int,
+    request: OptimizationRequest,
+) -> int:
+    return weight_to_units(
+        get_container_waste_kg(
+            data=data,
+            matrix_id=matrix_id,
+            fallback_kg=request.container_load_kg,
+        )
+    )
+
+
+def uncollected_penalty_for_container(
+    data: DataBundle,
+    matrix_id: int,
+    request: OptimizationRequest,
+    config: ORToolsConfig,
+) -> int:
+    waste_kg = get_container_waste_kg(
+        data=data,
+        matrix_id=matrix_id,
+        fallback_kg=request.container_load_kg,
+    )
+
+    reference_kg = max(
+        float(request.container_load_kg),
+        EPSILON,
+    )
+
+    return max(
+        int(config.solution_penalty),
+        int(
+            round(
+                config.solution_penalty
+                * waste_kg
+                / reference_kg
+            )
+        ),
+    )
 
 
 def build_arc_cost_matrix(
@@ -188,11 +261,33 @@ def build_routing_problem(
     pywrapcp: object,
 ) -> RoutingProblem:
     matrix_ids = build_solver_node_list(data)
+    trips = build_routing_trips(request)
+    base_node_index = matrix_ids.index(
+        int(data.base_matrix_id)
+    )
+    landfill_node_index = matrix_ids.index(
+        int(data.landfill_matrix_id)
+    )
+
+    starts = [
+        (
+            base_node_index
+            if trip.trip_index == 0
+            else landfill_node_index
+        )
+        for trip in trips
+    ]
+
+    ends = [
+        landfill_node_index
+        for _ in trips
+    ]
 
     manager = pywrapcp.RoutingIndexManager(
         len(matrix_ids),
-        len(request.vehicles),
-        0,
+        len(trips),
+        starts,
+        ends,
     )
 
     routing = pywrapcp.RoutingModel(manager)
@@ -236,8 +331,13 @@ def build_routing_problem(
         if matrix_id == data.base_matrix_id:
             return 0
 
-        return weight_to_units(
-            request.container_load_kg
+        if matrix_id == data.landfill_matrix_id:
+            return 0
+
+        return container_waste_to_units(
+            data=data,
+            matrix_id=matrix_id,
+            request=request,
         )
 
     demand_callback_index = (
@@ -247,11 +347,12 @@ def build_routing_problem(
     )
 
     vehicle_capacities = [
-        vehicle_total_capacity_units(
-            vehicle=vehicle,
-            request=request,
+        weight_to_units(
+            request.vehicles[
+                trip.physical_vehicle_index
+            ].capacity_kg
         )
-        for vehicle in request.vehicles
+        for trip in trips
     ]
 
     routing.AddDimensionWithVehicleCapacity(
@@ -281,13 +382,21 @@ def build_routing_problem(
 
         service_time_s = (
             request.service_time_s
-            if to_matrix_id != data.base_matrix_id
+            if to_matrix_id in data.container_matrix_ids
+            else 0
+        )
+
+        unload_time_s = (
+            request.unload_time_s
+            if to_matrix_id == data.landfill_matrix_id
             else 0
         )
 
         return int(
             math.ceil(
-                travel_time_s + service_time_s
+                travel_time_s
+                + service_time_s
+                + unload_time_s
             )
         )
 
@@ -299,27 +408,53 @@ def build_routing_problem(
         time_callback_index,
         0,
         [
-            int(vehicle.shift_duration_s)
-            for vehicle in request.vehicles
+            int(
+                request.vehicles[
+                    trip.physical_vehicle_index
+                ].shift_duration_s
+            )
+            for trip in trips
         ],
         True,
         "Time",
     )
 
     for node in range(1, len(matrix_ids)):
+        matrix_id = matrix_ids[node]
+        if matrix_id == data.landfill_matrix_id:
+            continue
+
         routing.AddDisjunction(
             [manager.NodeToIndex(node)],
-            int(config.solution_penalty),
+            uncollected_penalty_for_container(
+                data=data,
+                matrix_id=matrix_id,
+                request=request,
+                config=config,
+            ),
+        )
+
+    for vehicle_index, trip in enumerate(trips):
+        routing.SetFixedCostOfVehicle(
+            int(
+                trip.trip_index
+                * max(
+                    1,
+                    config.solution_penalty // 2,
+                )
+            ),
+            vehicle_index,
         )
 
     return RoutingProblem(
         manager=manager,
         routing=routing,
         matrix_ids=matrix_ids,
+        trips=trips,
     )
 
 
-def extract_container_sequences(
+def extract_trip_sequences(
     problem: RoutingProblem,
     solution: object,
     data: DataBundle,
@@ -329,9 +464,9 @@ def extract_container_sequences(
 
     sequences: list[list[int]] = []
 
-    for vehicle_index in range(routing.vehicles()):
+    for trip_index in range(routing.vehicles()):
         sequence: list[int] = []
-        index = routing.Start(vehicle_index)
+        index = routing.Start(trip_index)
 
         while not routing.IsEnd(index):
             node = manager.IndexToNode(index)
@@ -349,107 +484,60 @@ def extract_container_sequences(
     return sequences
 
 
-def insert_landfill_visits(
-    container_sequence: list[int],
+def build_routes_from_trip_sequences(
+    trip_sequences: list[list[int]],
     data: DataBundle,
-    vehicle: VehicleSpec,
     request: OptimizationRequest,
-) -> tuple[list[int], list[int]]:
-    route = [data.base_matrix_id]
+) -> list[list[int]]:
+    trips = build_routing_trips(request)
 
-    skipped: list[int] = []
-    current_load_kg = 0.0
-    unloads = 0
+    routes = [
+        [data.base_matrix_id]
+        for _ in request.vehicles
+    ]
 
-    for container in container_sequence:
-        if (
-            request.container_load_kg
-            > vehicle.capacity_kg + EPSILON
-        ):
-            skipped.append(container)
+    for trip, sequence in zip(trips, trip_sequences):
+        if not sequence:
             continue
 
-        projected_load_kg = (
-            current_load_kg
-            + request.container_load_kg
+        route = routes[trip.physical_vehicle_index]
+
+        expected_start = (
+            data.base_matrix_id
+            if trip.trip_index == 0
+            else data.landfill_matrix_id
         )
 
-        if projected_load_kg > vehicle.capacity_kg + EPSILON:
-            if unloads < request.max_unloads:
-                route.append(data.landfill_matrix_id)
-                current_load_kg = 0.0
-                unloads += 1
+        if route[-1] != expected_start:
+            route.append(expected_start)
 
-            else:
-                skipped.append(container)
-                continue
+        route.extend(sequence)
+        route.append(data.landfill_matrix_id)
 
-        route.append(container)
-        current_load_kg += request.container_load_kg
-
-    if current_load_kg > EPSILON:
-        if unloads < request.max_unloads:
-            route.append(data.landfill_matrix_id)
-            current_load_kg = 0.0
-            unloads += 1
-
+    for route in routes:
+        if route[-1] != data.base_matrix_id:
+            route.append(data.base_matrix_id)
         else:
-            while (
-                route
-                and route[-1]
-                not in {
-                    data.base_matrix_id,
-                    data.landfill_matrix_id,
-                }
-            ):
-                skipped.append(route.pop())
-                current_load_kg -= request.container_load_kg
+            route.append(data.base_matrix_id)
 
-    route.append(data.base_matrix_id)
-
-    return route, skipped
-
-
-def build_routes_from_sequences(
-    sequences: list[list[int]],
-    data: DataBundle,
-    request: OptimizationRequest,
-) -> tuple[list[list[int]], list[int]]:
-    routes: list[list[int]] = []
-    skipped: list[int] = []
-
-    for sequence, vehicle in zip(
-        sequences,
-        request.vehicles,
-    ):
-        route, skipped_for_vehicle = insert_landfill_visits(
-            container_sequence=sequence,
-            data=data,
-            vehicle=vehicle,
-            request=request,
-        )
-
-        routes.append(route)
-        skipped.extend(skipped_for_vehicle)
-
-    return routes, skipped
+    return routes
 
 
 def repair_routes_until_feasible(
-    sequences: list[list[int]],
+    trip_sequences: list[list[int]],
     data: DataBundle,
     request: OptimizationRequest,
     scales: ObjectiveScales,
 ) -> tuple[list[list[int]], list[int]]:
     skipped: list[int] = []
 
-    routes, initially_skipped = build_routes_from_sequences(
-        sequences=sequences,
+    routes = build_routes_from_trip_sequences(
+        trip_sequences=trip_sequences,
         data=data,
         request=request,
     )
 
-    skipped.extend(initially_skipped)
+    trips = build_routing_trips(request)
 
     while True:
         evaluation = evaluate_solution(
@@ -470,22 +558,33 @@ def repair_routes_until_feasible(
             if route_evaluation.is_feasible:
                 continue
 
-            if not sequences[route_index]:
+            candidate_trip_indexes = [
+                trip_index
+                for trip_index, trip in enumerate(trips)
+                if (
+                    trip.physical_vehicle_index
+                    == route_index
+                    and trip_sequences[trip_index]
+                )
+            ]
+
+            if not candidate_trip_indexes:
                 continue
 
+            trip_index = candidate_trip_indexes[-1]
+
             skipped.append(
-                sequences[route_index].pop()
+                trip_sequences[trip_index].pop()
             )
 
-            routes, additional_skipped = (
-                build_routes_from_sequences(
-                    sequences=sequences,
+            routes = (
+                build_routes_from_trip_sequences(
+                    trip_sequences=trip_sequences,
                     data=data,
                     request=request,
                 )
             )
 
-            skipped.extend(additional_skipped)
             changed = True
             break
 
@@ -589,14 +688,14 @@ def solve_with_ortools(
             ],
         )
 
-    sequences = extract_container_sequences(
+    trip_sequences = extract_trip_sequences(
         problem=problem,
         solution=solution,
         data=data,
     )
 
     routes, skipped = repair_routes_until_feasible(
-        sequences=sequences,
+        trip_sequences=trip_sequences,
         data=data,
         request=request,
         scales=scales,

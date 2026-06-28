@@ -196,15 +196,10 @@ class SolutionEvaluation:
     maximum_route_time_s: float
     total_fuel_l: float
     total_collected_waste_kg: float
+    total_uncollected_waste_kg: float
 
     objective_score: float
-    solution_key: tuple[
-        int,
-        float,
-        float,
-        float,
-        float,
-    ]
+    solution_key: tuple
 
     is_feasible: bool
     violations: list[str]
