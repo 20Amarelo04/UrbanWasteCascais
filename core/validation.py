@@ -615,8 +615,6 @@ def validate_data_bundle(
         )
     )
 
-    # Declives negativos representam descidas,
-    # pelo que são valores válidos.
     errors.extend(
         validate_square_matrix(
             data.slope_matrix,
