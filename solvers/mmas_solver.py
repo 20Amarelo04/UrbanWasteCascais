@@ -611,6 +611,19 @@ def construct_ant_solution(
 def evaluation_key(
     evaluation: SolutionEvaluation,
 ) -> tuple:
+    """Chave de comparação lexicográfica usada para decidir qual
+    solução é "melhor".
+
+    NÃO é apenas o objective_score: primeiro compara viabilidade
+    (uma solução inviável é sempre pior do que uma viável,
+    independentemente do score) e só depois os critérios definidos
+    em evaluation.solution_key (ex.: contentores não recolhidos,
+    distância, etc.). Por isso, uma solução com objective_score
+    numericamente mais baixo pode legitimamente perder para outra
+    com score mais alto, se a primeira for inviável ou deixar
+    contentores por recolher.
+    """
+
     feasibility_rank = (
         0 if evaluation.is_feasible else 1
     )
@@ -771,6 +784,7 @@ def solve_with_mmas(
     )
 
     global_best: AntSolution | None = None
+    global_best_found_at_iteration: int | None = None
     iterations_without_improvement = 0
 
     history: list[dict] = []
@@ -814,6 +828,7 @@ def solve_with_mmas(
 
         if improved:
             global_best = iteration_best
+            global_best_found_at_iteration = iteration
             iterations_without_improvement = 0
 
         else:
@@ -853,10 +868,36 @@ def solve_with_mmas(
                     .evaluation
                     .objective_score
                 ),
+                "iteration_best_feasible": (
+                    iteration_best
+                    .evaluation
+                    .is_feasible
+                ),
+                "iteration_best_uncollected": len(
+                    iteration_best
+                    .evaluation
+                    .uncollected_containers
+                ),
+                "iteration_best_uncollected_waste_kg": (
+                    iteration_best
+                    .evaluation
+                    .total_uncollected_waste_kg
+                ),
+                "iteration_best_became_global_best": (
+                    improved
+                ),
                 "global_best_score": (
                     global_best
                     .evaluation
                     .objective_score
+                ),
+                "global_best_feasible": (
+                    global_best
+                    .evaluation
+                    .is_feasible
+                ),
+                "global_best_found_at_iteration": (
+                    global_best_found_at_iteration
                 ),
                 "collected_containers": len(
                     global_best
