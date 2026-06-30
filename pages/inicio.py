@@ -16,17 +16,18 @@ page_header(
 
 st.markdown(
     """
-    ## 🌍 Problema de otimização
+    ## Problema de otimização
 
     O objetivo deste sistema é resolver o problema de **planeamento de rotas de recolha de resíduos urbanos**, 
     garantindo eficiência operacional e redução de custos.
 
     O problema consiste em decidir as melhores rotas para veículos de recolha, tendo em conta:
 
-    - 🗑️ Minimização de lixo não recolhido (prioridade máxima)
-    - ⛽ Minimização de consumo de combustível (modelo físico)
-    - 📏 Minimização de distância total percorrida
+    - Minimização de lixo não recolhido
+    - Minimização de consumo de combustível
+    - Minimização de distância total percorrida
 
+    
     O sistema respeita restrições reais como:
 
     - Capacidade dos veículos
@@ -34,9 +35,10 @@ st.markdown(
     - Necessidade de descarga no aterro
     - Estrutura base → recolha → aterro → base
 
+    
     Dois algoritmos são utilizados:
-    - 🐜 MMAS (Meta-Heurística baseada em colónias de formigas) — solver principal
-    - 🚛 OR-Tools — benchmark industrial de comparação
+    - MMAS (Meta-Heurística baseada em colónias de formigas)
+    - OR-Tools
     """
 )
 
