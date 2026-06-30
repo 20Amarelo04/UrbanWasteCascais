@@ -2,31 +2,43 @@ from __future__ import annotations
 
 import streamlit as st
 
-from core.data_loader import load_data_bundle
 from ui.theme import info_card, page_header
 
 
 page_header(
-    title="UrbanWasteCascais",
+    title="Urban Waste",
     subtitle=(
-        "Planeamento inteligente de rotas de recolha urbana, "
-        "com otimização de lixo não recolhido, combustível e distância."
+        "Sistema de otimização inteligente de rotas de recolha urbana "
+        "com foco na minimização de lixo não recolhido, combustível e distância."
     ),
     label="Painel operacional",
 )
 
-try:
-    data = load_data_bundle()
+st.markdown(
+    """
+    ## 🌍 Problema de otimização
 
-    col1, col2, col3, col4 = st.columns(4)
+    O objetivo deste sistema é resolver o problema de **planeamento de rotas de recolha de resíduos urbanos**, 
+    garantindo eficiência operacional e redução de custos.
 
-    col1.metric("Pontos na rede", len(data.points))
-    col2.metric("Contentores", len(data.container_matrix_ids))
-    col3.metric("Base", data.base_matrix_id)
-    col4.metric("Aterro", data.landfill_matrix_id)
+    O problema consiste em decidir as melhores rotas para veículos de recolha, tendo em conta:
 
-except Exception as error:
-    st.warning(f"Não foi possível carregar os dados: {error}")
+    - 🗑️ Minimização de lixo não recolhido (prioridade máxima)
+    - ⛽ Minimização de consumo de combustível (modelo físico)
+    - 📏 Minimização de distância total percorrida
+
+    O sistema respeita restrições reais como:
+
+    - Capacidade dos veículos
+    - Tempo máximo de operação
+    - Necessidade de descarga no aterro
+    - Estrutura base → recolha → aterro → base
+
+    Dois algoritmos são utilizados:
+    - 🐜 MMAS (Meta-Heurística baseada em colónias de formigas) — solver principal
+    - 🚛 OR-Tools — benchmark industrial de comparação
+    """
+)
 
 st.divider()
 
@@ -36,8 +48,8 @@ with left:
     info_card(
         title="Otimização",
         body=(
-            "Escolhe OR-Tools ou MMAS, define veículos, pesos de "
-            "combustível/distância e restrições operacionais."
+            "Escolhe o algoritmo (MMAS ou OR-Tools), define a frota e "
+            "configura os pesos de otimização."
         ),
         badge="Passo 1",
     )
@@ -46,8 +58,8 @@ with middle:
     info_card(
         title="Resultados",
         body=(
-            "Analisa métricas, rotas por veículo, segmentos, "
-            "sequência de recolha e contentores não recolhidos."
+            "Visualiza rotas por veículo, métricas de desempenho, "
+            "e análise de contentores não recolhidos."
         ),
         badge="Passo 2",
     )
@@ -56,13 +68,13 @@ with right:
     info_card(
         title="Mapa interativo",
         body=(
-            "Visualiza a rota pelas estradas, filtra veículos e "
-            "mantém os pontos não recolhidos assinalados a cinza."
+            "Explora as rotas em mapa, visualiza estradas reais e "
+            "identifica contentores não recolhidos a cinza."
         ),
         badge="Passo 3",
     )
 
 st.info(
-    "Começa pela página Otimização. Depois de calcular, os resultados "
-    "ficam disponíveis automaticamente na página Resultados."
+    "Começa na página de Otimização. Após execução, os resultados "
+    "são automaticamente disponibilizados na secção de Resultados."
 )
