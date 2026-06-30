@@ -14,6 +14,12 @@ page_header(
     label="Painel operacional",
 )
 
+
+st.info(
+    "Começa na página de Otimização. Após execução, os resultados "
+    "são automaticamente disponibilizados na secção de Resultados."
+)
+
 st.markdown(
     """
     ## Problema de otimização
@@ -75,8 +81,3 @@ with right:
         ),
         badge="Passo 3",
     )
-
-st.info(
-    "Começa na página de Otimização. Após execução, os resultados "
-    "são automaticamente disponibilizados na secção de Resultados."
-)
