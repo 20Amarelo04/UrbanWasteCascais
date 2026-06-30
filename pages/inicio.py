@@ -14,40 +14,6 @@ page_header(
     label="Painel operacional",
 )
 
-
-st.info(
-    "Começa na página de Otimização. Após execução, os resultados "
-    "são automaticamente disponibilizados na secção de Resultados."
-)
-
-st.markdown(
-    """
-    ## Problema de otimização
-
-    O objetivo deste sistema é resolver o problema de **planeamento de rotas de recolha de resíduos urbanos**, 
-    garantindo eficiência operacional e redução de custos.
-
-    O problema consiste em decidir as melhores rotas para veículos de recolha, tendo em conta:
-
-    - Minimização de lixo não recolhido
-    - Minimização de consumo de combustível
-    - Minimização de distância total percorrida
-
-    
-    O sistema respeita restrições reais como:
-
-    - Capacidade dos veículos
-    - Tempo máximo de operação
-    - Necessidade de descarga no aterro
-    - Estrutura base → recolha → aterro → base
-
-    
-    Dois algoritmos são utilizados:
-    - MMAS (Meta-Heurística baseada em colónias de formigas)
-    - OR-Tools
-    """
-)
-
 st.divider()
 
 left, middle, right = st.columns(3)
@@ -81,3 +47,36 @@ with right:
         ),
         badge="Passo 3",
     )
+    
+st.info(
+    "Começa na página de Otimização. Após execução, os resultados "
+    "são automaticamente disponibilizados na secção de Resultados."
+)
+
+st.markdown(
+    """
+    ## Problema de otimização
+
+    O objetivo deste sistema é resolver o problema de **planeamento de rotas de recolha de resíduos urbanos**, 
+    garantindo eficiência operacional e redução de custos.
+
+    O problema consiste em decidir as melhores rotas para veículos de recolha, tendo em conta:
+
+    - Minimização de lixo não recolhido
+    - Minimização de consumo de combustível
+    - Minimização de distância total percorrida
+
+    
+    O sistema respeita restrições reais como:
+
+    - Capacidade dos veículos
+    - Tempo máximo de operação
+    - Necessidade de descarga no aterro
+    - Estrutura base → recolha → aterro → base
+
+    
+    Dois algoritmos são utilizados:
+    - MMAS (Meta-Heurística baseada em colónias de formigas)
+    - OR-Tools
+    """
+)
